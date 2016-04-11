@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title> 401K Watch List</title>
+ <!--meta http-equiv="refresh" content="600" /-->
+ <style>
+	#watchlist{
+		width:300px;
+	}
+	iframe.iframeChart{
+		margin: 0;
+		padding: 0;
+		border: 0;
+		width: 700px;
+		height: 530px;
+	}
+	hr{
+		border: none;
+		height: 5px;
+		background-color: blue;
+	}
+	h2{
+		color: blue;
+	}
+ </style>
+</head>
+
+<body>
+<h1>Stock/Fund List: <a id="selectAnchor" onclick="clearText(this)"></a> <input type="text" id="watchlist" style="width:500px"> <button onclick="updateCharts()">Update</button></h1>
+<div id="allCharts"></div>
+<p id="test"><p>
+
+<script>
+	var ListByAccount = getListByAccount();
+	populateList();
+	
+	function clearText(element){
+		element.firstChild.value = "";
+	}
+	
+	function getListByAccount(){
+		localStorage.removeItem("listByAccount");
+		var list = localStorage.getItem("listByAccount");
+		if (list === null) {
+			list = {
+				"JJ 401K": ['BSPIX', 'PIOBX'],
+				"Market Index": ['SPY','$VIX','DIA','QQQ','IWM','ASHR','GLD','TLT','USO','JNK'],
+				"Vangaurd IRA": ['VFINX','VEIEX','VHDYX','VGPMX','VBLTX','VTSMX','VGTSX', 'VGSIX'],
+				"Indiviual Stocks": ['GOOGL','AAPL','FB','AMZN','MCD','WMT','XOM','AXP','JPM'],
+				"Vangaurd ETF": ['VTI','VWO','VEA','BND']
+			};
+			saveListByAccount(list);
+			return list;
+		}
+		return JSON.parse(list);
+	}
+	 
+	function populateList(){
+		var element = document.getElementById("selectAnchor");
+		element.innerHTML = "";
+		
+		var x = document.createElement("INPUT");
+		x.setAttribute("list", "accountList");
+		x.setAttribute("id", "selectList");
+		element.appendChild(x);
+
+		var y = document.createElement("DATALIST");
+		y.setAttribute("id", "accountList");
+		element.appendChild(y);
+		for (var account in ListByAccount) {
+			y.appendChild(createDataListOption(account));
+		}
+		document.getElementById('selectList').addEventListener('input', function(){
+			document.getElementById("watchlist").value = ListByAccount[event.target.value];
+		});
+	}
+	
+	function createDataListOption(value){
+		var option = document.createElement("OPTION");
+		option.value = value;
+		return option;
+	}
+	
+	function saveListByAccount(listbyaccount){
+		localStorage.setItem("listByAccount", JSON.stringify(listbyaccount));
+	}
+	
+	function updateListByAccount(){
+		var list = document.getElementById("watchlist").value.split(",");
+		var account = document.getElementById("selectList").value;
+		if (!(account in ListByAccount)) document.getElementById('accountList').appendChild(createDataListOption(account));
+		ListByAccount[account] = list;
+		saveListByAccount(ListByAccount);
+	}
+	
+	function updateCharts() {
+		updateListByAccount();
+		var list = document.getElementById("watchlist").value.split(",");
+		var div = document.getElementById("allCharts");
+		div.innerHTML = "";
+		div.appendChild(document.createElement("HR"));
+		for (var i = 0; i < list.length; i++){
+			var ticker = list[i].trim();
+			div.appendChild(createHeader(ticker));
+			div.appendChild(createChart(ticker, true));
+			div.appendChild(createChart(ticker), false);
+			div.appendChild(document.createElement("HR"));
+		}
+	}
+	
+	function createHeader(ticker){
+		var x = document.createElement("H2");
+		x.innerHTML = ticker;
+		return x;
+	}
+	
+	function createChart(ticker, isDaily) {
+		var x = document.createElement("IFRAME");
+		x.src = "https://stockcharts.com/c-sc/sc?s="+ticker+"&p=W&b=5&g=0&i=t19119605288&r=1425068976245";
+		if (isDaily) x.src = "https://stockcharts.com/c-sc/sc?s="+ticker+"&p=D&b=5&g=0&i=t19119605288&r=1425068976245";
+		x.className = "iframeChart";
+		return x;
+	}
+</script>
+</body>
+</html>
